@@ -26,6 +26,11 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
                   .setFactoryResetProtectionEnabled(false)
                   .build();
             dpm.setFactoryResetProtectionPolicy(admin, frpPolicy);
+             
+            Intent intent = new Intent("com.google.android.gms.auth.FRP_CONFIG_CHANGED");
+            intent.setPackage("com.google.android.gms");
+            context.sendBroadcast(intent);
+      
            } else {
                    android.os.Bundle restrictions = new android.os.Bundle();
                    restrictions.putBoolean("disableFactoryResetProtectionAdmin", true);
