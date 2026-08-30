@@ -1,5 +1,6 @@
 package duress.ultimate;
 
+import java.util.Collections;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.DeviceAdminReceiver;
 import android.content.ComponentName;
