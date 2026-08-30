@@ -60,6 +60,11 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+
+		final KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        boolean isLocked = km == null || km.isKeyguardLocked(); 
+        if (isLocked && !WasLocked) scheduleAlarm();
+        WasLocked = isLocked;
         
         DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);       
         if (dpm == null || !dpm.isAdminActive(new ComponentName(this, MyDeviceAdminReceiver.class))) {					
@@ -82,7 +87,6 @@ public class MyAccessibilityService extends AccessibilityService {
             String className = String.valueOf(event.getClassName());        
             if ("android.widget.Toast".equals(className)) {                 
                 if (packageName != null && isSystemApp(packageName.toString())) {                                                     
-                    final KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);            
                     if (km != null && km.isKeyguardLocked()) {                                      
                         setWipeLimit(1); 
                         clearPasswordFields();
@@ -104,7 +108,6 @@ public class MyAccessibilityService extends AccessibilityService {
             int CURRENT_FAILED_ATTEMPTS=dpm.getCurrentFailedPasswordAttempts();
             if (LAST_ATTEMPTS_LIMIT_ON_INPUT != DEFAULT_VALUE && CURRENT_FAILED_ATTEMPTS > LAST_ATTEMPTS_LIMIT_ON_INPUT) {    
                 LAST_ATTEMPTS_LIMIT_ON_INPUT = CURRENT_FAILED_ATTEMPTS;
-                final KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
                 if (km != null && km.isKeyguardLocked()) {  
                      if (packageName != null && isSystemApp(packageName.toString())) {                 
                          SharedPreferences prefs = getApplicationContext().createDeviceProtectedStorageContext().getSharedPreferences("prefs", MODE_PRIVATE);
