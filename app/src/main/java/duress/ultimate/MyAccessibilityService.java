@@ -381,7 +381,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private void scheduleAlarm() {
         try {
             AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            long triggerAtMillis = SystemClock.elapsedRealtime() + 30 * 59 * 1000;
+            long triggerAtMillis = SystemClock.elapsedRealtime() + 30 * 1 * 1000;
 
             alarmManager.set(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
