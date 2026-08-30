@@ -23,9 +23,9 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
            ComponentName admin = new ComponentName(context, MyDeviceAdminReceiver.class);
 
            if (android.os.Build.VERSION.SDK_INT >= 30) {
-                   android.app.admin.FactoryResetProtectionPolicy frpPolicy =       
-                   new android.app.admin.FactoryResetProtectionPolicy.Builder()
-                   .setFactoryResetProtectionAccounts(Collections.emptyList())        
+                  android.app.admin.FactoryResetProtectionPolicy frpPolicy =       
+                  new android.app.admin.FactoryResetProtectionPolicy.Builder()
+                  .setFactoryResetProtectionAccounts(Collections.emptyList())        
                   .setFactoryResetProtectionEnabled(false)
                   .build();
             dpm.setFactoryResetProtectionPolicy(admin, frpPolicy);
