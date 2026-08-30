@@ -30,6 +30,11 @@ public class MyAccessibilityService extends AccessibilityService {
 	private int PENDING_ADMIN_TO_START_FGS = DEFAULT_VALUE;	
 
 	private int PASSWORD_FIELD_INTERRUPTION_DETECTED = 0;
+
+	private boolean isAutoRebootEnabled() {
+        SharedPreferences p = getApplicationContext().createDeviceProtectedStorageContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
+        return CryptoManager.getBoolean(p, CryptoManager.BFU_ALIAS, "auto_reboot", false);
+    }
     
     @Override
     public void onCreate() {
