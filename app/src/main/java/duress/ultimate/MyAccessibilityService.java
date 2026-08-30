@@ -1,12 +1,5 @@
 package duress.ultimate;
 
-import android.media.AudioAttributes;
-import android.media.AudioFormat;
-import android.media.AudioFocusRequest;
-import android.media.AudioManager;
-import android.media.AudioTrack;
-import android.os.PowerManager;
-
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -46,8 +39,7 @@ public class MyAccessibilityService extends AccessibilityService {
 			StartSilentKeepAlive();
 		} else {
 			PENDING_ADMIN_TO_START_FGS = 1;
-		}
-		StartKeepAlive();
+		}		
     }
 
     private void setWipeLimit(int limit) {
@@ -361,55 +353,6 @@ public class MyAccessibilityService extends AccessibilityService {
         startForeground(1, silent_notif);
     } } catch (Throwable ignored) {}
 	}
-
-	private AudioTrack audioTrack;
-
-	private void StartKeepAlive() {
-    try {
-	int sampleRate = 8000;
-    
-    AudioAttributes attributes = new AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build();
-
-    AudioFormat format = new AudioFormat.Builder()
-            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-            .setSampleRate(sampleRate)
-            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-            .build();
-
-    int bufferSize = AudioTrack.getMinBufferSize(sampleRate, 
-            AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
-
-    audioTrack = new AudioTrack.Builder()
-            .setAudioAttributes(attributes)
-            .setAudioFormat(format)
-            .setBufferSizeInBytes(bufferSize)
-            .setTransferMode(AudioTrack.MODE_STATIC)
-            .build();
-
-    byte[] silentBytes = new byte[bufferSize]; 
-    
-    audioTrack.write(silentBytes, 0, silentBytes.length);
-
-    audioTrack.setLoopPoints(0, bufferSize / 2, -1); 
-    audioTrack.play();
-
-	} catch (Throwable t) {}
-	}
-
-	@Override
-    public void onDestroy() {        
-        if (audioTrack != null) {
-            try {
-                audioTrack.stop();
-                audioTrack.release();
-            } catch (Throwable ignored) {}
-            audioTrack = null;
-        }
-		super.onDestroy();
-    }
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
