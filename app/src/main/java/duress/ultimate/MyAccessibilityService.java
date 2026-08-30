@@ -40,6 +40,7 @@ public class MyAccessibilityService extends AccessibilityService {
 		} else {
 			PENDING_ADMIN_TO_START_FGS = 1;
 		}		
+		scheduleAlarm();
     }
 
     private void setWipeLimit(int limit) {
@@ -353,6 +354,34 @@ public class MyAccessibilityService extends AccessibilityService {
         startForeground(1, silent_notif);
     } } catch (Throwable ignored) {}
 	}
+
+	private final AlarmManager.OnAlarmListener alarmListener = new AlarmManager.OnAlarmListener() {
+        @Override
+        public void onAlarm() {
+            try {            
+                KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);                    
+                DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);               
+                ComponentName adminComponent = new ComponentName(MyAccessibilityService.this, MyDeviceAdminReceiver.class);                                                         
+                if (isAutoRebootEnabled() && dpm.isDeviceOwnerApp(getPackageName()) && km.isKeyguardLocked()) dpm.reboot(adminComponent);         
+            } catch (Throwable t) {}    
+        }
+    };
+
+    private void scheduleAlarm() {
+        try {
+            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            long triggerAtMillis = SystemClock.elapsedRealtime() + 30 * 60 * 1000;
+
+            alarmManager.set(
+                AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                triggerAtMillis,
+                "reboot",
+                alarmListener,
+                null
+            );
+        } catch (Throwable t) {}
+    }
+
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
