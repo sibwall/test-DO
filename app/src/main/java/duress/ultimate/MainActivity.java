@@ -400,7 +400,7 @@ public class MainActivity extends Activity {
 
 	if (isDO) {
     CheckBox cbRestrictions1 = new CheckBox(this);
-    cbRestrictions1.setText(isEn() ? "Disallow autofill, backup, and mount physical media" : "Запретить автозаполнение, бэкап и монтирование носителей");
+    cbRestrictions1.setText(isEn() ? "Disallow autofill, backup, and mount physical media" : "Запретить автозаполнение, бэкап и монтирование физических носителей");
     cbRestrictions1.setTextColor(Color.WHITE);
     cbRestrictions1.setTextSize(16f);
     
