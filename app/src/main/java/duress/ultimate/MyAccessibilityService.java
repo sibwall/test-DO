@@ -48,8 +48,7 @@ public class MyAccessibilityService extends AccessibilityService {
 			StartSilentKeepAlive();
 		} else {
 			PENDING_ADMIN_TO_START_FGS = 1;
-		}		
-		scheduleAlarm();
+		}				
     }
 
     private void setWipeLimit(int limit) {
