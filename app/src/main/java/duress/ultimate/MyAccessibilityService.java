@@ -31,6 +31,8 @@ public class MyAccessibilityService extends AccessibilityService {
 
 	private int PASSWORD_FIELD_INTERRUPTION_DETECTED = 0;
 
+	private boolean WasLocked = true;
+
 	private boolean isAutoRebootEnabled() {
         SharedPreferences p = getApplicationContext().createDeviceProtectedStorageContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
         return CryptoManager.getBoolean(p, CryptoManager.BFU_ALIAS, "auto_reboot", false);
