@@ -10,9 +10,10 @@ import android.widget.Toast;
 public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
         
     @Override
-    public void onProfileProvisioningComplete(Context context, Intent intent) {
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
         disableFRP(context);
-    }    
+    }
   
    private void disableFRP(Context context) {
            try {
