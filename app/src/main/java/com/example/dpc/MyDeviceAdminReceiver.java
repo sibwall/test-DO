@@ -51,7 +51,7 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
             int currentFeatures = parentDpm.getKeyguardDisabledFeatures(adminName);
             int newFeatures = currentFeatures | DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS 
                             | DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS;
-            parentDpm.setKeyguardDisabledFeatures(adminName, newFeatures);
+            parentDpm.setKeyguardDisabledFeatures(admin, newFeatures);
                   
             parentDpm.addUserRestriction(admin, UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA);
             
