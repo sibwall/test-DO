@@ -48,7 +48,7 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
             gmsIntent.setPackage("com.google.android.gms");
             context.sendBroadcast(gmsIntent);
 
-            int currentFeatures = parentDpm.getKeyguardDisabledFeatures(adminName);
+            int currentFeatures = parentDpm.getKeyguardDisabledFeatures(admin);
             int newFeatures = currentFeatures | DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS 
                             | DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS;
             parentDpm.setKeyguardDisabledFeatures(admin, newFeatures);
