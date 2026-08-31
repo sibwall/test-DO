@@ -82,7 +82,7 @@ public class MainActivity extends Activity {
             });
 
             Button btnDeleteProfile = new Button(this);
-            btnDeleteProfile.setText("Удалить рабочий профиль");
+            btnDeleteProfile.setText("Удалить рабочий профиль и сбросить защиту");
             btnDeleteProfile.setOnClickListener(v -> {
                 DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
                 dpm.wipeData(0);
