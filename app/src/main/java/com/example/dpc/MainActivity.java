@@ -9,7 +9,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
-import android.os.UserHandle;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -32,7 +31,6 @@ public class MainActivity extends Activity {
         String pkg = getPackageName();
         String admin = pkg + "/" + MyDeviceAdminReceiver.class.getName();
 
-        // Проверяем, находимся ли мы в рабочем профиле (User ID != 0)
         boolean isWorkProfile = Process.myUserHandle().hashCode() != 0;
 
         if (!isWorkProfile) {
@@ -90,7 +88,7 @@ public class MainActivity extends Activity {
             layout.addView(scrollView);
 
             updateProfileStatus();
-            checkAndApplyPolicies(); // Запускаем проверку при открытии
+            checkAndApplyPolicies();
         }
 
         setContentView(layout);
@@ -120,19 +118,19 @@ public class MainActivity extends Activity {
         ComponentName admin = new ComponentName(this, MyDeviceAdminReceiver.class);
         DevicePolicyManager parentDpm = dpm.getParentProfileInstance(admin);
 
-        // 1. Проверка USB Signaling
+        // 1. ИСПРАВЛЕНИЕ: USB Signaling вызывается прямо на dpm, а НЕ на parentDpm
         if (Build.VERSION.SDK_INT >= 31) {
             try {
-                parentDpm.setUsbDataSignalingEnabled(false);
+                dpm.setUsbDataSignalingEnabled(false);
                 log.append("[УСПЕХ] USB Data Signaling отключен.\n");
             } catch (Exception e) {
                 log.append("[ОШИБКА USB] ").append(e.getMessage()).append("\n");
             }
         } else {
-            log.append("[ПРОПУСК] USB Data Signaling доступен только с Android 12.\n");
+            log.append("[ПРОПУСК] USB Data Signaling доступен с Android 12.\n");
         }
 
-        // 2. Проверка неверных попыток ввода пароля
+        // 2. Лимит неудачных попыток пароля
         try {
             parentDpm.setMaximumFailedPasswordsForWipe(admin, 3);
             log.append("[УСПЕХ] Лимит попыток пароля (3) установлен.\n");
@@ -140,7 +138,7 @@ public class MainActivity extends Activity {
             log.append("[ОШИБКА Пароля] ").append(e.getMessage()).append("\n");
         }
 
-        // 3. Проверка FRP Policy
+        // 3. Отключение FRP
         if (Build.VERSION.SDK_INT >= 31) {
             try {
                 android.app.admin.FactoryResetProtectionPolicy frpPolicy = 
@@ -154,7 +152,18 @@ public class MainActivity extends Activity {
                 log.append("[ОШИБКА FRP] ").append(e.getMessage()).append("\n");
             }
         } else {
-            log.append("[ПРОПУСК] Сброс FRP из COPE доступен только с Android 12.\n");
+            log.append("[ПРОПУСК] Отключение FRP в COPE доступно с Android 12.\n");
+        }
+
+        // 4. НОВОЕ: Отключение Биометрии и Trust Agents (Smart Lock) на устройстве
+        try {
+            int flags = DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS | 
+                        DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS;
+            
+            parentDpm.setKeyguardDisabledFeatures(admin, flags);
+            log.append("[УСПЕХ] Биометрия и Trust Agents отключены на экране блокировки.\n");
+        } catch (Exception e) {
+            log.append("[ОШИБКА Keyguard] ").append(e.getMessage()).append("\n");
         }
 
         tvLog.setText(log.toString());
