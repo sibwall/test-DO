@@ -45,7 +45,8 @@ public class MainActivity extends Activity {
                 "adb shell am start-user $USER_ID && " +
                 "adb shell pm install-existing --user $USER_ID " + pkg + " && " +
                 "adb shell dpm set-profile-owner --user $USER_ID " + admin + " && " +
-                "adb shell dpm mark-profile-owner-on-organization-owned-device --user $USER_ID " + admin;
+                "adb shell dpm mark-profile-owner-on-organization-owned-device --user $USER_ID " + admin +
+                " && adb shell am start --user $USER_ID -n " + pkg + "/.MainActivity";
 
             TextView tvCommands = new TextView(this);
             tvCommands.setText(universalCommand);
