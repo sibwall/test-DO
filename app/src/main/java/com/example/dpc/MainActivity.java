@@ -33,7 +33,6 @@ public class MainActivity extends Activity {
         boolean isWorkProfile = Process.myUserHandle().hashCode() != 0;
 
         if (!isWorkProfile) {
-            // === РЕЖИМ ОСНОВНОГО ПОЛЬЗОВАТЕЛЯ (USER 0) ===
             TextView tvDescription = new TextView(this);
             tvDescription.setText("Описание приложения:\n" +
                     "Данное DPC-приложение настраивает изолированный рабочий профиль в режиме COPE (Organization-Owned Device).\n" +
@@ -46,8 +45,7 @@ public class MainActivity extends Activity {
                 "adb shell am start-user $USER_ID && " +
                 "adb shell pm install-existing --user $USER_ID " + pkg + " && " +
                 "adb shell dpm set-profile-owner --user $USER_ID " + admin + " && " +
-                "adb shell dpm mark-profile-owner-on-organization-owned-device --user $USER_ID " + admin + " && " +
-                "adb shell am broadcast --user $USER_ID -a " + MyDeviceAdminReceiver.ACTION_APPLY_COPE + " -n " + admin;
+                "adb shell dpm mark-profile-owner-on-organization-owned-device --user $USER_ID " + admin;
 
             TextView tvCommands = new TextView(this);
             tvCommands.setText(universalCommand);
@@ -69,9 +67,6 @@ public class MainActivity extends Activity {
             layout.addView(tvCommands);
 
         } else {
-            // === РЕЖИМ РАБОЧЕГО ПРОФИЛЯ (USER 10+) ===
-            
-            // Кнопки отображаются всегда
             TextView tvQuestion = new TextView(this);
             tvQuestion.setText("Что вы хотите?");
             tvQuestion.setTextSize(18);
@@ -95,7 +90,6 @@ public class MainActivity extends Activity {
             layout.addView(btnSetPassword);
             layout.addView(btnDeleteProfile);
 
-            // Проверка политик и вызов AlertDialog при ошибке
             String errorMsg = validatePolicies();
             if (errorMsg != null) {
                 showErrorDialog(errorMsg);
@@ -114,7 +108,6 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    // Метод проверки корректности настроек COPE
     private String validatePolicies() {
         DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
         ComponentName admin = new ComponentName(this, MyDeviceAdminReceiver.class);
@@ -122,29 +115,24 @@ public class MainActivity extends Activity {
 
         StringBuilder errors = new StringBuilder();
 
-        // Проверка статуса Profile Owner
         if (!dpm.isProfileOwnerApp(getPackageName())) {
             errors.append("• Приложение не является Profile Owner.\n");
         }
-
-        // 1. Проверка USB Signaling
+        
         if (Build.VERSION.SDK_INT >= 31) {
             if (dpm.isUsbDataSignalingEnabled()) {
                 errors.append("• USB Data Signaling всё ещё ВКЛЮЧЕН.\n");
             }
         }
 
-        // 2. Проверка лимита попыток ввода пароля
         if (parentDpm.getMaximumFailedPasswordsForWipe(admin) != 3) {
             errors.append("• Не установлен лимит неудачных попыток ввода пароля (ожидается 3).\n");
         }
 
-        // 3. Проверка блокировки внешних накопителей (USB/SD)
         if (!parentDpm.getUserRestrictions(admin).getBoolean(UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA)) {
             errors.append("• Запрет физических накопителей (DISALLOW_MOUNT_PHYSICAL_MEDIA) НЕ активен.\n");
         }
 
-        // 4. Проверка отключения биометрии и Trust Agents
         int keyguardFlags = parentDpm.getKeyguardDisabledFeatures(admin);
         int expectedFlags = DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS | DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS;
         if ((keyguardFlags & expectedFlags) != expectedFlags) {
