@@ -1,36 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="duress.ultimate">
-
-	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" /> 		
+    package="com.example.dpc">
 	
     <application
-		android:allowBackup="false"
-		android:debuggable="false"				
-		android:manageSpaceActivity=".EntryActivity"
-		android:requestLegacyExternalStorage="false"
-        android:fullBackupContent="false"
-		android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"       
-		android:extractNativeLibs="false"
+		android:allowBackup="false"		
 		android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
-        android:label="DuressUltimate">
-	
-        <service
-            android:name=".MyAccessibilityService"
-            android:foregroundServiceType="systemExempted"          			
-			android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true"		
-			android:enabled="true"
-			android:stopWithTask="false"			
-            android:directBootAware="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService"/>
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_config"/>
-        </service>
+        android:label="testCOPE">	
 		
         <activity
 			android:exported="true"			
@@ -39,22 +13,12 @@
 			android:screenOrientation="portrait"
 			android:resizeableActivity="false"
 			android:excludeFromRecents="true"
-			android:name=".EntryActivity">
+			android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-		<activity
-			android:exported="false"			
-			android:launchMode="singleTask"
-			android:turnScreenOn="true"			
-			android:screenOrientation="portrait"
-			android:resizeableActivity="false"
-			android:excludeFromRecents="true"
-			android:name=".MainActivity">            
-        </activity>		
 
 		<receiver		
 			android:name=".MyDeviceAdminReceiver"			
@@ -66,11 +30,10 @@
                 android:name="android.app.device_admin"
                 android:resource="@xml/device_admin" />
             <intent-filter>
-                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-				<action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />	
-				<action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
-				<action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED" />            
-            </intent-filter>			
+             <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+             <action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
+             <action android:name="com.example.dpc.ACTION_APPLY_COPE" />
+            </intent-filter>		
         </receiver>
 		
     </application>
