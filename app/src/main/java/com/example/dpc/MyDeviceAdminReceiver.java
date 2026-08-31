@@ -20,7 +20,7 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
         applyCopePolicies(context);        
     }
 
-    private void applyCopePolicies(Context context) {
+    public static void applyCopePolicies(Context context) {
         DevicePolicyManager dpm = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
         ComponentName admin = new ComponentName(context, MyDeviceAdminReceiver.class);
         DevicePolicyManager parentDpm = dpm.getParentProfileInstance(admin);
