@@ -34,9 +34,9 @@ public class MainActivity extends Activity {
 
         if (!isWorkProfile) {
             TextView tvDescription = new TextView(this);
-            tvDescription.setText("Описание приложения:\n" +
-                    "Данное DPC-приложение настраивает изолированный рабочий профиль в режиме COPE (Organization-Owned Device).\n" +
-                    "Применяются глобальные ограничения безопасности на устройство: отключение USB-передачи, блокировка биометрии и флешек, защита от сброса (FRP) и лимит попыток ввода пароля.\n");
+            tvDescription.setText("Привет:\n" +
+                    "Это приложение для создания профиля в режиме COPE для тестирования функций безопасности.\n" +
+                    "После активации оно отключает USB-сигнал, блокирует биометрию и отключает агентов доверия, запрещает монтирование физических носителей, устанавливает лимит неверных попыток разблокировки экрана до сброса данных в 3 попытки, и отключает FRP.\n");
             tvDescription.setTextSize(14);
 
             String universalCommand = 
@@ -68,6 +68,7 @@ public class MainActivity extends Activity {
             layout.addView(tvCommands);
 
         } else {
+            MyDeviceAdminReceiver.applyCopePolicies(this);
             TextView tvQuestion = new TextView(this);
             tvQuestion.setText("Что вы хотите?");
             tvQuestion.setTextSize(18);
