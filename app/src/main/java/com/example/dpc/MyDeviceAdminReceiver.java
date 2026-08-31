@@ -50,16 +50,13 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
             gmsIntent.setPackage("com.google.android.gms");
             context.sendBroadcast(gmsIntent);
 
-            int flags = DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS | 
-                        DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS;
-            parentDpm.setKeyguardDisabledFeatures(admin, flags);
-
+            int currentFeatures = parentDpm.getKeyguardDisabledFeatures(adminName);
+            int newFeatures = currentFeatures | DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS 
+                            | DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS;
+            parentDpm.setKeyguardDisabledFeatures(adminName, newFeatures);
+                  
             parentDpm.addUserRestriction(admin, UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA);
-
-            Toast.makeText(context, "Начальные запреты COPE применены!", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Toast.makeText(context, "Ошибка при настройке: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            e.printStackTrace();
-        }
+            
+        } catch (Exception e) {}
     }
 }
