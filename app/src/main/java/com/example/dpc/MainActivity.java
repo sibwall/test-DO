@@ -6,19 +6,17 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
+import android.os.UserManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-
-    private TextView tvStatus;
-    private TextView tvLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,138 +33,125 @@ public class MainActivity extends Activity {
 
         if (!isWorkProfile) {
             // === РЕЖИМ ОСНОВНОГО ПОЛЬЗОВАТЕЛЯ (USER 0) ===
-            TextView tvTitle = new TextView(this);
-            tvTitle.setText("Запустите команду в aShell:");
-            tvTitle.setTextSize(16);
+            TextView tvDescription = new TextView(this);
+            tvDescription.setText("Описание приложения:\n" +
+                    "Данное DPC-приложение настраивает изолированный рабочий профиль в режиме COPE (Organization-Owned Device).\n" +
+                    "Применяются глобальные ограничение безопасности на устройство: отключение USB-передачи, блокировка биометрии и флешек, защита от сброса (FRP) и лимит попыток ввода пароля.\n");
+            tvDescription.setTextSize(14);
 
-            String aShellCommands = 
-                "USER_ID=$(pm create-user --profileOf 0 --user-type android.os.usertype.profile.MANAGED WorkProfile | grep -o '[0-9]*$') && " +
-                "am start-user $USER_ID && " +
-                "pm install-existing --user $USER_ID " + pkg + " && " +
-                "dpm set-profile-owner --user $USER_ID " + admin + " && " +
-                "dpm mark-profile-owner-on-organization-owned-device --user $USER_ID " + admin + " && " +
-                "am broadcast --user $USER_ID -a " + MyDeviceAdminReceiver.ACTION_APPLY_COPE + " -n " + admin;
+            String universalCommand = 
+                "adb(){ if [ \"$1\" = \"shell\" ]; then shift; fi; \"$@\"; }; " +
+                "USER_ID=$(adb shell pm create-user --profileOf 0 --user-type android.os.usertype.profile.MANAGED WorkProfile | grep -o '[0-9]*$') && " +
+                "adb shell am start-user $USER_ID && " +
+                "adb shell pm install-existing --user $USER_ID " + pkg + " && " +
+                "adb shell dpm set-profile-owner --user $USER_ID " + admin + " && " +
+                "adb shell dpm mark-profile-owner-on-organization-owned-device --user $USER_ID " + admin + " && " +
+                "adb shell am broadcast --user $USER_ID -a " + MyDeviceAdminReceiver.ACTION_APPLY_COPE + " -n " + admin;
 
             TextView tvCommands = new TextView(this);
-            tvCommands.setText(aShellCommands);
+            tvCommands.setText(universalCommand);
             tvCommands.setTextIsSelectable(true);
             tvCommands.setTextSize(11);
             tvCommands.setPadding(0, 16, 0, 16);
 
             Button btnCopy = new Button(this);
-            btnCopy.setText("Скопировать для aShell");
+            btnCopy.setText("Скопировать ADB команду");
             btnCopy.setOnClickListener(v -> {
                 ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("aShell Commands", aShellCommands);
+                ClipData clip = ClipData.newPlainText("ADB Command", universalCommand);
                 clipboard.setPrimaryClip(clip);
                 Toast.makeText(this, "Команда скопирована!", Toast.LENGTH_SHORT).show();
             });
 
-            layout.addView(tvTitle);
+            layout.addView(tvDescription);
             layout.addView(btnCopy);
             layout.addView(tvCommands);
 
         } else {
             // === РЕЖИМ РАБОЧЕГО ПРОФИЛЯ (USER 10+) ===
-            tvStatus = new TextView(this);
-            tvStatus.setTextSize(14);
-            tvStatus.setPadding(0, 0, 0, 16);
+            String errorMsg = validatePolicies();
 
-            Button btnApply = new Button(this);
-            btnApply.setText("Применить COPE политики и проверить");
-            btnApply.setOnClickListener(v -> checkAndApplyPolicies());
+            if (errorMsg != null) {
+                // Если хоть одна политика не прошла проверку
+                TextView tvErrorTitle = new TextView(this);
+                tvErrorTitle.setText("ОШИБКА БЕЗОПАСНОСТИ!");
+                tvErrorTitle.setTextSize(18);
 
-            tvLog = new TextView(this);
-            tvLog.setTextSize(12);
-            tvLog.setTextIsSelectable(true);
+                TextView tvErrorLog = new TextView(this);
+                tvErrorLog.setText(errorMsg);
+                tvErrorLog.setTextSize(13);
+                tvErrorLog.setPadding(0, 16, 0, 0);
 
-            ScrollView scrollView = new ScrollView(this);
-            scrollView.addView(tvLog);
+                layout.addView(tvErrorTitle);
+                layout.addView(tvErrorLog);
+            } else {
+                // Если ВСЕ политики в полном порядке
+                TextView tvQuestion = new TextView(this);
+                tvQuestion.setText("Что вы хотите?");
+                tvQuestion.setTextSize(18);
+                tvQuestion.setPadding(0, 0, 0, 24);
 
-            layout.addView(tvStatus);
-            layout.addView(btnApply);
-            layout.addView(scrollView);
+                Button btnSetPassword = new Button(this);
+                btnSetPassword.setText("Задать пароль для рабочего профиля");
+                btnSetPassword.setOnClickListener(v -> {
+                    Intent intent = new Intent(DevicePolicyManager.ACTION_SET_NEW_PASSWORD);
+                    startActivity(intent);
+                });
 
-            updateProfileStatus();
-            checkAndApplyPolicies();
+                Button btnDeleteProfile = new Button(this);
+                btnDeleteProfile.setText("Удалить рабочий профиль");
+                btnDeleteProfile.setOnClickListener(v -> {
+                    DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
+                    dpm.wipeData(0);
+                });
+
+                layout.addView(tvQuestion);
+                layout.addView(btnSetPassword);
+                layout.addView(btnDeleteProfile);
+            }
         }
 
         setContentView(layout);
     }
 
-    private void updateProfileStatus() {
-        DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
-        boolean isProfileOwner = dpm.isProfileOwnerApp(getPackageName());
-        boolean isOrgOwned = false;
-
-        if (Build.VERSION.SDK_INT >= 30) {
-            isOrgOwned = dpm.isOrganizationOwnedDeviceWithManagedProfile();
-        }
-
-        String status = "Статус профиля:\n" +
-                "• Profile Owner: " + (isProfileOwner ? "ДА" : "НЕТ") + "\n" +
-                "• COPE (Org-Owned): " + (isOrgOwned ? "ДА (Устройство организации)" : "НЕТ (Обычный BYOD)");
-        
-        tvStatus.setText(status);
-    }
-
-    private void checkAndApplyPolicies() {
-        StringBuilder log = new StringBuilder();
-        log.append("=== РЕЗУЛЬТАТ ПРИМЕНЕНИЯ ПОЛИТИК ===\n\n");
-
+    // Метод проверки корректности настроек COPE
+    private String validatePolicies() {
         DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
         ComponentName admin = new ComponentName(this, MyDeviceAdminReceiver.class);
         DevicePolicyManager parentDpm = dpm.getParentProfileInstance(admin);
+        UserManager userManager = (UserManager) getSystemService(Context.USER_SERVICE);
 
-        // 1. ИСПРАВЛЕНИЕ: USB Signaling вызывается прямо на dpm, а НЕ на parentDpm
+        StringBuilder errors = new StringBuilder();
+
+        // Проверка status Profile Owner
+        if (!dpm.isProfileOwnerApp(getPackageName())) {
+            errors.append("• Приложение не является Profile Owner.\n");
+        }
+
+        // 1. Проверка USB Signaling
         if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                dpm.setUsbDataSignalingEnabled(false);
-                log.append("[УСПЕХ] USB Data Signaling отключен.\n");
-            } catch (Exception e) {
-                log.append("[ОШИБКА USB] ").append(e.getMessage()).append("\n");
+            if (dpm.isUsbDataSignalingEnabled()) {
+                errors.append("• USB Data Signaling всё ещё ВКЛЮЧЕН.\n");
             }
-        } else {
-            log.append("[ПРОПУСК] USB Data Signaling доступен с Android 12.\n");
         }
 
-        // 2. Лимит неудачных попыток пароля
-        try {
-            parentDpm.setMaximumFailedPasswordsForWipe(admin, 3);
-            log.append("[УСПЕХ] Лимит попыток пароля (3) установлен.\n");
-        } catch (Exception e) {
-            log.append("[ОШИБКА Пароля] ").append(e.getMessage()).append("\n");
+        // 2. Проверка лимита попыток ввода пароля
+        if (parentDpm.getMaximumFailedPasswordsForWipe(admin) != 3) {
+            errors.append("• Не установлен лимит неудачных попыток ввода пароля (ожидается 3).\n");
         }
 
-        // 3. Отключение FRP
-        if (Build.VERSION.SDK_INT >= 31) {
-            try {
-                android.app.admin.FactoryResetProtectionPolicy frpPolicy = 
-                        new android.app.admin.FactoryResetProtectionPolicy.Builder()
-                        .setFactoryResetProtectionAccounts(java.util.Collections.emptyList())
-                        .setFactoryResetProtectionEnabled(false)
-                        .build();
-                dpm.setFactoryResetProtectionPolicy(admin, frpPolicy);
-                log.append("[УСПЕХ] FRP отключен.\n");
-            } catch (Exception e) {
-                log.append("[ОШИБКА FRP] ").append(e.getMessage()).append("\n");
-            }
-        } else {
-            log.append("[ПРОПУСК] Отключение FRP в COPE доступно с Android 12.\n");
+        // 3. Проверка блокировки внешних накопителей (USB/SD)
+        if (!parentDpm.getUserRestrictions().getBoolean(UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA)) {
+            errors.append("• Запрет физических накопителей (DISALLOW_MOUNT_PHYSICAL_MEDIA) НЕ активен.\n");
         }
 
-        // 4. НОВОЕ: Отключение Биометрии и Trust Agents (Smart Lock) на устройстве
-        try {
-            int flags = DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS | 
-                        DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS;
-            
-            parentDpm.setKeyguardDisabledFeatures(admin, flags);
-            log.append("[УСПЕХ] Биометрия и Trust Agents отключены на экране блокировки.\n");
-        } catch (Exception e) {
-            log.append("[ОШИБКА Keyguard] ").append(e.getMessage()).append("\n");
+        // 4. Проверка отключения биометрии и Trust Agents
+        int keyguardFlags = parentDpm.getKeyguardDisabledFeatures(admin);
+        int expectedFlags = DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS | DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS;
+        if ((keyguardFlags & expectedFlags) != expectedFlags) {
+            errors.append("• Ограничения экрана блокировки (Биометрия/Trust Agents) НЕ активны.\n");
         }
 
-        tvLog.setText(log.toString());
-        updateProfileStatus();
+        return errors.length() > 0 ? errors.toString() : null;
     }
 }
