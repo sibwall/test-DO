@@ -18,13 +18,8 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        super.onReceive(context, intent);
-
-        if (ACTION_APPLY_COPE.equals(intent.getAction()) || 
-            ACTION_PROFILE_PROVISIONING_COMPLETE.equals(intent.getAction())) {
-            
-            applyCopePolicies(context);
-        }
+        super.onReceive(context, intent);        
+        applyCopePolicies(context);        
     }
 
     private void applyCopePolicies(Context context) {
@@ -33,15 +28,12 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
         DevicePolicyManager parentDpm = dpm.getParentProfileInstance(admin);
 
         try {
-            // 1. Отключение передачи данных USB
             if (Build.VERSION.SDK_INT >= 31) {
                 dpm.setUsbDataSignalingEnabled(false);
             }
 
-            // 2. Лимит попыток ввода пароля (3 раза)
             parentDpm.setMaximumFailedPasswordsForWipe(admin, 3);
 
-            // 3. Отключение FRP + Интент в GMS
             if (Build.VERSION.SDK_INT >= 30) {
                 FactoryResetProtectionPolicy frpPolicy = new FactoryResetProtectionPolicy.Builder()
                         .setFactoryResetProtectionAccounts(Collections.emptyList())
@@ -58,12 +50,10 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
             gmsIntent.setPackage("com.google.android.gms");
             context.sendBroadcast(gmsIntent);
 
-            // 4. Запрет биометрии и Trust Agents
             int flags = DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS | 
                         DevicePolicyManager.KEYGUARD_DISABLE_TRUST_AGENTS;
             parentDpm.setKeyguardDisabledFeatures(admin, flags);
 
-            // 5. Запрет монтирования внешних накопителей (USB/SD) на весь девайс
             parentDpm.addUserRestriction(admin, UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA);
 
             Toast.makeText(context, "Начальные запреты COPE применены!", Toast.LENGTH_SHORT).show();
