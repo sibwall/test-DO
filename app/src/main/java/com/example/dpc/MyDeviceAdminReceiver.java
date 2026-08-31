@@ -14,8 +14,6 @@ import java.util.Collections;
 
 public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
 
-    public static final String ACTION_APPLY_COPE = "com.example.dpc.ACTION_APPLY_COPE";
-
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);        
