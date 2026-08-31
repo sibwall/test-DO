@@ -1,6 +1,7 @@
 package com.example.dpc;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.admin.DevicePolicyManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -36,7 +37,7 @@ public class MainActivity extends Activity {
             TextView tvDescription = new TextView(this);
             tvDescription.setText("Описание приложения:\n" +
                     "Данное DPC-приложение настраивает изолированный рабочий профиль в режиме COPE (Organization-Owned Device).\n" +
-                    "Применяются глобальные ограничение безопасности на устройство: отключение USB-передачи, блокировка биометрии и флешек, защита от сброса (FRP) и лимит попыток ввода пароля.\n");
+                    "Применяются глобальные ограничения безопасности на устройство: отключение USB-передачи, блокировка биометрии и флешек, защита от сброса (FRP) и лимит попыток ввода пароля.\n");
             tvDescription.setTextSize(14);
 
             String universalCommand = 
@@ -69,49 +70,48 @@ public class MainActivity extends Activity {
 
         } else {
             // === РЕЖИМ РАБОЧЕГО ПРОФИЛЯ (USER 10+) ===
+            
+            // Кнопки отображаются всегда
+            TextView tvQuestion = new TextView(this);
+            tvQuestion.setText("Что вы хотите?");
+            tvQuestion.setTextSize(18);
+            tvQuestion.setPadding(0, 0, 0, 24);
+
+            Button btnSetPassword = new Button(this);
+            btnSetPassword.setText("Задать пароль для рабочего профиля");
+            btnSetPassword.setOnClickListener(v -> {
+                Intent intent = new Intent(DevicePolicyManager.ACTION_SET_NEW_PASSWORD);
+                startActivity(intent);
+            });
+
+            Button btnDeleteProfile = new Button(this);
+            btnDeleteProfile.setText("Удалить рабочий профиль");
+            btnDeleteProfile.setOnClickListener(v -> {
+                DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
+                dpm.wipeData(0);
+            });
+
+            layout.addView(tvQuestion);
+            layout.addView(btnSetPassword);
+            layout.addView(btnDeleteProfile);
+
+            // Проверка политик и вызов AlertDialog при ошибке
             String errorMsg = validatePolicies();
-
             if (errorMsg != null) {
-                // Если хоть одна политика не прошла проверку
-                TextView tvErrorTitle = new TextView(this);
-                tvErrorTitle.setText("ОШИБКА БЕЗОПАСНОСТИ!");
-                tvErrorTitle.setTextSize(18);
-
-                TextView tvErrorLog = new TextView(this);
-                tvErrorLog.setText(errorMsg);
-                tvErrorLog.setTextSize(13);
-                tvErrorLog.setPadding(0, 16, 0, 0);
-
-                layout.addView(tvErrorTitle);
-                layout.addView(tvErrorLog);
-            } else {
-                // Если ВСЕ политики в полном порядке
-                TextView tvQuestion = new TextView(this);
-                tvQuestion.setText("Что вы хотите?");
-                tvQuestion.setTextSize(18);
-                tvQuestion.setPadding(0, 0, 0, 24);
-
-                Button btnSetPassword = new Button(this);
-                btnSetPassword.setText("Задать пароль для рабочего профиля");
-                btnSetPassword.setOnClickListener(v -> {
-                    Intent intent = new Intent(DevicePolicyManager.ACTION_SET_NEW_PASSWORD);
-                    startActivity(intent);
-                });
-
-                Button btnDeleteProfile = new Button(this);
-                btnDeleteProfile.setText("Удалить рабочий профиль");
-                btnDeleteProfile.setOnClickListener(v -> {
-                    DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
-                    dpm.wipeData(0);
-                });
-
-                layout.addView(tvQuestion);
-                layout.addView(btnSetPassword);
-                layout.addView(btnDeleteProfile);
+                showErrorDialog(errorMsg);
             }
         }
 
         setContentView(layout);
+    }
+
+    private void showErrorDialog(String errorMsg) {
+        new AlertDialog.Builder(this)
+                .setTitle("Ошибка безопасности!")
+                .setMessage("Обнаружены неактивные политики:\n\n" + errorMsg)
+                .setPositiveButton("Понятно", (dialog, which) -> dialog.dismiss())
+                .setCancelable(true)
+                .show();
     }
 
     // Метод проверки корректности настроек COPE
@@ -119,11 +119,10 @@ public class MainActivity extends Activity {
         DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
         ComponentName admin = new ComponentName(this, MyDeviceAdminReceiver.class);
         DevicePolicyManager parentDpm = dpm.getParentProfileInstance(admin);
-        UserManager userManager = (UserManager) getSystemService(Context.USER_SERVICE);
 
         StringBuilder errors = new StringBuilder();
 
-        // Проверка status Profile Owner
+        // Проверка статуса Profile Owner
         if (!dpm.isProfileOwnerApp(getPackageName())) {
             errors.append("• Приложение не является Profile Owner.\n");
         }
@@ -141,8 +140,8 @@ public class MainActivity extends Activity {
         }
 
         // 3. Проверка блокировки внешних накопителей (USB/SD)
-        if (!parentDpm.getUserRestrictions(admin).getBoolean(UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA)) { 
-           errors.append("• Запрет физических накопителей (DISALLOW_MOUNT_PHYSICAL_MEDIA) НЕ активен.\n");
+        if (!parentDpm.getUserRestrictions(admin).getBoolean(UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA)) {
+            errors.append("• Запрет физических накопителей (DISALLOW_MOUNT_PHYSICAL_MEDIA) НЕ активен.\n");
         }
 
         // 4. Проверка отключения биометрии и Trust Agents
