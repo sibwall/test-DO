@@ -141,8 +141,8 @@ public class MainActivity extends Activity {
         }
 
         // 3. Проверка блокировки внешних накопителей (USB/SD)
-        if (!parentDpm.getUserRestrictions().getBoolean(UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA)) {
-            errors.append("• Запрет физических накопителей (DISALLOW_MOUNT_PHYSICAL_MEDIA) НЕ активен.\n");
+        if (!parentDpm.getUserRestrictions(admin).getBoolean(UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA)) { 
+           errors.append("• Запрет физических накопителей (DISALLOW_MOUNT_PHYSICAL_MEDIA) НЕ активен.\n");
         }
 
         // 4. Проверка отключения биометрии и Trust Agents
