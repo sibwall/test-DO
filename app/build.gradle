@@ -3,7 +3,7 @@ id 'com.android.application'
 }
 
 android {
-namespace "duress.ultimate"
+namespace "com.example.dpc"
 compileSdk 34
 
 lint {
@@ -11,7 +11,7 @@ checkReleaseBuilds false
 }
 
 defaultConfig {  
-    applicationId "duress.ultimate"  
+    applicationId "com.example.dpc"  
     minSdk 29
     targetSdk 37
     versionCode 10
