@@ -51,8 +51,8 @@ public class MainActivity extends Activity {
             TextView tvCommands = new TextView(this);
             tvCommands.setText(universalCommand);
             tvCommands.setTextIsSelectable(true);
-            tvCommands.setTextSize(11);
-            tvCommands.setPadding(0, 16, 0, 16);
+            tvCommands.setTextSize(15);
+            tvCommands.setPadding(0, 15, 0, 15);
 
             Button btnCopy = new Button(this);
             btnCopy.setText("Скопировать ADB команду");
